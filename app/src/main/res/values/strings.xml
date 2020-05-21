@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">My Tap Metronome</string>
+    <string name="diff_text">Time between taps : {x} seconds  = {y} bpm </string>
+</resources>
