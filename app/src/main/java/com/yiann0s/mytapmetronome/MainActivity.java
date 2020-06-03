@@ -4,10 +4,13 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -20,6 +23,7 @@ import java.net.UnknownHostException;
 public class MainActivity extends AppCompatActivity {
 
     private Button tapButton;
+    private EditText userInput;
     private boolean flag = true;
     private Long startTime, endTime, diff;
     private TextView diffTextView;
@@ -30,6 +34,8 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        userInput = findViewById(R.id.user_input_edit_text);
+
         tapButton = findViewById(R.id.tap_button);
 
         diffTextView = findViewById(R.id.diff_text_view);
@@ -37,12 +43,9 @@ public class MainActivity extends AppCompatActivity {
         tapButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-//                frequencySniffing();
-//                retroGetUsers("64394");
-                String host = "192.168.1.91";
-                //String host = "127.0.0.1";
-//                StartClient(host,8081);
-                new RetrieveFeedTask().execute();
+
+                frequencySniffing();
+
             }
         });
 
@@ -50,10 +53,10 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    public void StartClient(String serverHostname, int port) {
+    public void socketCommunication(String serverHostname, int port, String delay) {
         try {
 
-            Log.i(TAG, "StartClient: Connecting to host " + serverHostname + " on port " + port + ".");
+            Log.i(TAG, "socketCommunication: Connecting to host " + serverHostname + " on port " + port + ".");
 
             Socket echoSocket = null;
             PrintWriter out = null;
@@ -65,24 +68,23 @@ public class MainActivity extends AppCompatActivity {
                 in = new BufferedReader(new InputStreamReader(echoSocket.getInputStream()));
             } catch (UnknownHostException e) {
                 Log.e(TAG, "Client: Unknown host: " + serverHostname);
-                System.exit(1);
             } catch (IOException e) {
-                Log.e(TAG, "Client: " + e.getLocalizedMessage() );
-                System.exit(1);
+                Log.e(TAG, "Client: exception" + e.getLocalizedMessage() );
             }
 
             /** {@link UnknownHost} object used to read from console */
             BufferedReader stdIn = new BufferedReader(new InputStreamReader(System.in));
 
+            Integer counter = 0;
             while (true) {
-                System.out.print("client: ");
-                String userInput = "hahahaha";
-                /** Exit on 'q' char sent */
-                if ("q".equals(userInput)) {
+                Log.d(TAG, "socketCommunication- client: ");
+                out.println(delay);
+                counter ++;
+                Log.d(TAG, "socketCommunication- server: " + in.readLine());
+                if ( counter == 1 ) {
+                    out.println("q");
                     break;
                 }
-                out.println(userInput);
-                System.out.println("server: " + in.readLine());
             }
 
             /** Closing all the resources */
@@ -92,7 +94,7 @@ public class MainActivity extends AppCompatActivity {
             echoSocket.close();
         } catch (Exception e) {
             e.printStackTrace();
-            Log.e(TAG, "Client 2 " + e.getLocalizedMessage() );
+            Log.e(TAG, "socketCommunication " + e.getLocalizedMessage() );
         }
     }
 
@@ -100,11 +102,9 @@ public class MainActivity extends AppCompatActivity {
 
         private Exception exception;
 
-        protected Integer doInBackground(String... urls) {
+        protected Integer doInBackground(String... params) {
             try {
-                String host = "192.168.1.91";
-                //String host = "127.0.0.1";
-                StartClient(host, 8081);
+                socketCommunication(params[0], Integer.valueOf(params[1]), params[2]);
                 return 1;
             } catch (Exception e) {
                 this.exception = e;
@@ -138,7 +138,14 @@ public class MainActivity extends AppCompatActivity {
             Log.d(TAG, "onClick: delay" + delay);
             if ( diff > 0 ){
                 diffTextView.setText(getString(R.string.diff_text).replace("{x}",String.valueOf(d)).replace("{y}",String.valueOf(delay)));
-                diffTextView.setText("delay " + String.valueOf(delay));
+                diffTextView.setText("delay " + delay);
+                if (TextUtils.isEmpty(userInput.getText())){
+                    Toast.makeText(MainActivity.this, "Please enter a valid ip address", Toast.LENGTH_SHORT).show();
+                } else if (delay > 0 ){
+                    new RetrieveFeedTask().execute(userInput.getText().toString(),"8081",delay.toString());
+                } else {
+                    Log.d(TAG, "frequencySniffing: something went wrong");
+                }
             }
 
         }
